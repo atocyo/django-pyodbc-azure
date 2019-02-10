@@ -495,9 +495,13 @@ class CursorWrapper(object):
             sql = smart_str(sql, self.driver_charset)
 
         # pyodbc uses '?' instead of '%s' as parameter placeholder.
+        # SQL identifiers (consequently table names) can contain special characters if surrounded by brackets '[...]'
+        # Replace only those placeholders:'%, %% %s etc.' which are not surrounded by brackets.            
+        # This is not complete solution, there may be problems with string literals in SQL etc.            
         if params is not None:
-            sql = sql % tuple('?' * len(params))
-
+            pattern = '''(?<![\[\]])\%[sbcdoxXn%]?(?![^\[\]]*\])'''
+            sql = re.sub(pattern,'?',sql)
+            
         return sql
 
     def format_params(self, params):
